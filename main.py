@@ -29,13 +29,17 @@ def func(message):
         markup.add(btn1, btn2, back)
         bot.send_message(message.chat.id, text="Задай мне вопрос", reply_markup=markup)
     elif(message.text == "Информатика"):
-        print('lol')
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        btn1 = types.KeyboardButton("Тестовая часть")
+        btn2 = types.KeyboardButton("Задания, не входящие в ЕГЭ этого года")
+        markup.add(btn1, btn2, back)
+        bot.send_message(message.chat.id, text="Выберите задание", reply_markup=markup)
         u = pars.pars_link('https://inf-ege.sdamgia.ru/')
         answer = u.pars_link_task()
         for i, button in enumerate(answer):
-            print(button)
+            print(button['link task'])
             print('-' * 20)
-            print(button)
+            
              
 	
 bot.infinity_polling()
