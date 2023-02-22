@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 import config
-import pars
+import json
 with open('token.txt') as token:
 	token = token.read()
 bot = telebot.TeleBot(token, 
@@ -24,28 +24,39 @@ def func(message):
     if(message.text == "👋 Поздороваться"):
         bot.send_message(message.chat.id, text="Привеет.. Спасибо что пользуешся мной!)")
     elif(message.text == "Выбор предмета"):
-        markup = types.InlineKeyboardMarkup(row_width=3)
-        btn1 = types.InlineKeyboardButton("Информатика", callback_data=[params[0,2], 'Информатика'])
-        btn2 = types.InlineKeyboardButton("Математика", callback_data='but2')
-        btn3 = types.InlineKeyboardButton("Физика", callback_data='but3')
-        btn4 = types.InlineKeyboardButton("Химия", callback_data='but4')
-        btn5 = types.InlineKeyboardButton("Биология", callback_data='but5')
-        btn6 = types.InlineKeyboardButton("География", callback_data='but6')
-        btn7 = types.InlineKeyboardButton("Общество знание", callback_data='but7')
-        btn8 = types.InlineKeyboardButton("Литература", callback_data='but8')
-        btn9 = types.InlineKeyboardButton("История", callback_data='but9')
-        markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9)
+        with open('all_task.json', 'r', encoding='utf-8') as all_task:
+              academic_subjects = json.load(
+                                            all_task
+                                            )
+        all_btn = list()
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        for index, academic_subject in enumerate(academic_subjects):
+              key_academic_subject = academic_subject.keys()
+              name_academic_subject = ''.join(key_academic_subject)
+              all_task = academic_subject.get(name_academic_subject)
+              btn = types.InlineKeyboardButton(name_academic_subject, callback_data=str(index))
+              all_btn.append(btn)
+        markup.add(*all_btn)
         bot.send_message(message.chat.id, text="Выбери предмет:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
-     if call.data[0] == params[0,1] and call.data[1] == :
-            new_menu = types.ReplyKeyboardMarkup()
-            test02 = types.KeyboardButton('Тестовая часть',)
-            new_menu.add(types.InlineKeyboardButton('Ничего нового', callback_data='but4'))
-            bot.edit_message_text('Новое меню, кнопка 1', call.message.chat.id, call.message.message_id,
+    with open('all_task.json', 'r', encoding='utf-8') as all_task:
+              academic_subjects = json.load(
+                                            all_task
+                                            )
+    task = academic_subjects[int(call.data)]
+    new_menu = types.ReplyKeyboardMarkup()
+    all_btn = list()
+    for task in task.get(''.join(task.keys())):
+            key_task =  task.keys()
+            name_task = ''.join(key_task)
+            btn = types.KeyboardButton(name_task)
+            all_btn.append(btn)
+    new_menu.add(*all_btn)
+    bot.edit_message_text('Новое меню, кнопка 1', call.message.chat.id, call.message.message_id,
                               reply_markup=new_menu)
-         
+         #  if call.data[0] == "academic_subject" :
     # elif(message.text == "Информатика"):
     #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     #     btn1 = types.KeyboardButton("Тестовая часть")
