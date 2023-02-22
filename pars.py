@@ -5,11 +5,12 @@ import time
 import json
 
 class pars_link():
-    def __init__(self, url) :
+    def __init__(self, academic_subject, url) :
         self.filename =DriverUpdater.install(driver_name=DriverUpdater.chromedriver)
+        self.AS = academic_subject
         self.url = url
     
-    def pars_element(self):
+    def pars_list_task(self):
             driver = webdriver.Chrome(self.filename)
             driver.get(url)
             time.sleep(5)
@@ -17,72 +18,89 @@ class pars_link():
             childs_one = parent.find_elements(By.CLASS_NAME, 'ConstructorForm-Row')
             return childs_one
 
-    def father_link(self, childs_one):
-        for element, item in zip(childs_one, items[0]):
-            link_task = 'Тестовая часть'
-            link_task2 = 'Развёрнутая часть'
-            link_task3 = 'Задания, не входящие в ЕГЭ этого года'
-            pars_link = [
-                        {
-                        item:[
-                            {link_task: {}}, 
-                            {link_task2:{}},
-                            {link_task3:{}}
-                            ]
+    def creating_template(self):
+            pars_link ={
+                        self.AS:[
+                                {'Тестовая часть': {}}, 
+                                {'Развернутая часть':{}},
+                                {'Задания, не входящие в ЕГЭ этого года':{}}
+                                ]
                         }
-                        ]
-            element = element.find_elements(By.CLASS_NAME, 'ConstructorForm-Topic')[0]
+                            
+            return [pars_link, self.AS]
+
+    def chek_nameFather(self, element):
+        try:
+                father_name_link = (element.find_elements(By.TAG_NAME, 'u')
+                        )[0].get_property('innerText')
+                return father_name_link
+        except IndexError:
+                father_name_link = (element.find_elements(By.CLASS_NAME, 'ConstructorForm-TopicDesc')
+                        )[0].get_property('innerText')
+                return father_name_link
+                
+        
+            
+    def father_LinkName(self):
+        childs_one = pl.pars_list_task()
+        pars_link, item = pl.creating_template()
+        for LinkName in childs_one:
+            element = LinkName.find_element(By.CLASS_NAME, 'ConstructorForm-Topic')
             time.sleep(0.5)
             element.click()
             try:
-                father_name_link = (element.find_elements(By.TAG_NAME, 'u')
-                        )[0].get_property('outerText')
+                number_father = element.find_elements(By.CLASS_NAME, 'ConstructorForm-TopicNumber')[0].get_attribute('innerText')
             except IndexError:
-                father_name_link = (element.find_elements(
+                 number_father = ''
+            if 'Тестовая часть' == element.get_attribute('innerText'):
+                    row_label = 'Тестовая часть'
+                    numb = 0
+                    continue
+            elif 'Развернутая часть' == element.get_attribute('innerText'):
+                    row_label = 'Развернутая часть'
+                    numb = 1
+                    continue
+            elif "Задания, не\xa0входящие в\xa0ЕГЭ этого года" == element.get_attribute('innerText'):
+                    row_label = "Задания, не входящие в ЕГЭ этого года"
+                    numb = 2
+                    continue
+            else:
+                    father_name_link = pl.chek_nameFather(element)
+                    father_name_link = number_father + father_name_link
+                    pars_link[item][numb][row_label].update({father_name_link:{}})
+                    info_child_name_link = element.find_elements(
                                                         By.CLASS_NAME, 
                                                         'ConstructorForm-TopicDesc'
-                                                        ))[0].get_attribute('innerText')
-            if link_task == father_name_link:
-                update = link_task
-                numb = 0
-                continue
-            elif link_task2 == father_name_link:
-                update = link_task2
-                numb = 1
-                continue
-            elif link_task3 == father_name_link:
-                update = link_task2
-                numb = 2
-                continue
-            pars_link[0][item][numb][update].update({father_name_link:{}})
-            info_child_name_link = element.find_elements(
-                                                        By.CLASS_NAME, 
-                                                        'Link_wrap.ConstructorForm-TopicName.Label'
                                                         )
-            return [info_child_name_link, pars_link, father_name_link, update, numb]
+                    pl.pars_links(info_child_name_link, pars_link, item, row_label, numb, father_name_link)
+            
+        return  pars_link
     
-    def pars_links(self):
-        childs_one = pl.pars_element()
-        father_link = pl.father_link(childs_one)
-        pars_link = father_link[1]
-        update = father_link[3]
-        numb = father_link[4]
-        father_name_link = father_link[2]
-        info_child_name_link = father_link[0]
+    def pars_links(self, info_child_name_link, pars_link, item, row_label, numb, father_name_link):
         for child_name_link in info_child_name_link:
                 name = ((child_name_link.get_attribute('outerText')).split('\xa0'))[0]
                 link = child_name_link.find_elements(By.TAG_NAME, 'a')
                 if len(link) != 0 and name != '':
                     link = link[0].get_attribute('href')
-                    pars_link[numb][update][father_name_link].update({name: link})
-        return pars_link
+                    pars_link[item][numb][row_label][father_name_link].update({name: link})
+                
 with open('father_link.json', encoding="utf8") as fl:
                 items = json.load(fl)
                 keys = items[0].keys()
+inf =[]
 for key in keys:
       url = items[0].get(key)
-      pl = pars_link(url)
-      answer = pl.pars_links()
-print(answer[0])
+      pl = pars_link(key, url)
+      answer = pl.father_LinkName()
+      inf.append(answer)
+with open('all_task.json', 'w', encoding='utf-8') as all_task:
+       json.dump(
+                inf,
+                all_task,
+                sort_keys=False,
+                indent=4,
+                ensure_ascii=False,
+                separators=(',', ': ')
+                )
 
             
